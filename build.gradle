@@ -1,0 +1,61 @@
+plugins {
+    id "scala"
+    id "maven"
+    id "com.github.maiflai.scalatest" version "0.11"
+}
+
+group = 'org.eoin'
+version = '1.0-SNAPSHOT'
+
+ext {
+  scalaMajorVersion = '2.11'
+  scalaVersion = "${scalaMajorVersion}.7"
+}
+
+repositories {
+  mavenCentral()
+  mavenLocal()
+}
+
+dependencies {
+
+  // ------------------------------------------------------------
+  // Platform
+
+  compile "org.scala-lang:scala-library:${scalaVersion}"
+  compile "org.scala-lang:scala-reflect:${scalaVersion}"
+
+  // ------------------------------------------------------------
+  // Misc. libraries
+
+  compile 'org.apache.logging.log4j:log4j-core:2.5'
+
+  // ------------------------------------------------------------
+  // Testing
+
+  testCompile "org.scalatest:scalatest_${scalaMajorVersion}:3.0.0"
+  testCompile 'junit:junit:4.12'
+  testCompile 'org.mockito:mockito-all:1.10.19'
+  testCompile "org.scalacheck:scalacheck_${scalaMajorVersion}:1.13.4"
+  testCompile 'org.pegdown:pegdown:1.6.0'
+
+
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.13'
+}
+
+tasks.withType(ScalaCompile) {
+    configure(scalaCompileOptions.forkOptions) {
+        memoryMaximumSize = '1g'
+    }
+    configure {
+        scalaCompileOptions.additionalParameters = [
+                "-feature",
+                "-language:reflectiveCalls", // used for config structural typing
+                "-language:postfixOps" ,
+                "-Xexperimental" // toll-free Java 8 functional bridging
+        ]
+    }
+}
