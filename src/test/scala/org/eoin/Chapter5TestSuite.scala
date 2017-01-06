@@ -10,6 +10,7 @@ import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scala.collection.BitSet
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.HashSet
+import scala.collection.mutable.ListBuffer
 
 /**
   * Created by eoin.parker on 11/10/16.
@@ -30,10 +31,6 @@ class Chapter5TestSuite extends JUnitSuite with GeneratorDrivenPropertyChecks {
     }
   }
 
-  @Test def fails : Unit = {
-    val mys = MyStream(1,2)
-    mys.streamToList should equal (List(1,2))
-  }
 
   @Test def exercise1StreamToList : Unit = {
 
@@ -45,12 +42,42 @@ class Chapter5TestSuite extends JUnitSuite with GeneratorDrivenPropertyChecks {
 
   @Test def exercise2TakeN : Unit = {
 
-    forAll { (mysi: MyStream[Int], n:Int) =>
-      whenever(n >=0) {
-        mysi.take(n).streamToList should equal (mysi.streamToList.take(n))
+    forAll (arbitraryMyStream[Int].arbitrary, Gen.choose(0,10), minSuccessful (100))
+      { (mysi: MyStream[Int], n:Int ) =>
+          mysi.take(n).streamToList should equal (mysi.streamToList.take(n))
       }
-    }
+
+    forAll (arbitraryMyStream[Int].arbitrary, Gen.choose(0,100), minSuccessful (100))
+      { (mysi: MyStream[Int], n:Int ) =>
+          mysi.take(n).streamToList should equal (mysi.streamToList.take(n))
+      }
   }
+
+  @Test def exercise11FromN : Unit = {
+
+    forAll (Arbitrary.arbInt.arbitrary, Gen.choose(0, 100), minSuccessful(1000)) { ( n:Int, count:Int ) =>
+      println (s"n:$n count:$count")
+          MyStream.fromUnfold(n).take(count).streamToList should equal((n to (n + count -1)).toList)
+      }
+  }
+
+  @Test def exercise11ConstantN : Unit = {
+
+    forAll (Arbitrary.arbInt.arbitrary, Gen.choose(0, 100), minSuccessful(1000))
+      { ( n:Int, count:Int ) =>
+          MyStream.constantUnfold(n).take(count).streamToList should equal(List.fill(count)(n))
+      }
+  }
+
+  @Test def fails : Unit = {
+    val v1 = MyStream.fromUnfold(2147483647).take(3).streamToList
+    val v2 = (2147483647 to (2147483647 + 3 -1)).toList
+    println (v1 ++ v2)
+  }
+
+
+
+
 
   @Test def exercise3TakeWhile : Unit = {
 
@@ -64,7 +91,14 @@ class Chapter5TestSuite extends JUnitSuite with GeneratorDrivenPropertyChecks {
       val pass2 = pass1.takeWhile(p)
       pass1.streamToList should equal (pass2.streamToList)
 
+      val lb = ListBuffer[Int] ()
+      val lessThan100 = mysi.takeWhile((i:Int) => {lb += i ; i < 10})
+      lb.size should (equal(0) or equal(1))
+      val asList = lessThan100.streamToList // this should force a lazy deref
+      lb.size should equal(asList.size)
+
     }
+
   }
 
   @Test def testCBF: Unit = {
