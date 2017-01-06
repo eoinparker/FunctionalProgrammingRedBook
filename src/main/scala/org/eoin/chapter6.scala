@@ -1,5 +1,7 @@
 package org.eoin
 
+import scala.annotation.tailrec
+
 
 object Chapter6 {
 
@@ -165,7 +167,13 @@ object Chapter6 {
       State(newRunFn)
       }
 
+    def modify(f: S => S): State[Unit, S] = for {
+      s <- get
+      _ <- set(f(s))
+    } yield ()
 
+    def get: State[S,S]  = State( (s) => (s,s))
+    def set (newS:S): State[Unit,S]  = State( (s:S) => ((),newS))
 
   }
 
@@ -186,6 +194,43 @@ object Chapter6 {
 
   }
 
+  sealed trait Input
+  case object Coin extends Input
+  case object Turn extends Input
+  case class Machine(locked: Boolean, candies: Int, coins: Int)
+
+  def simulateMachine(inputs: List[Input]): State[Machine, Machine ] = {
+
+
+    def applyInput(input:Input)(machine:Machine) : State[Machine, Machine] = {
+      val outputMachine = input match {
+        case _ if (machine.candies <= 0) => machine
+        case Coin if (machine.locked && machine.candies>0) => machine.copy(locked=false, coins = machine.coins+1)
+        case Turn if (! machine.locked && machine.candies>0) => machine.copy(locked=true, candies = machine.candies-1)
+        case Turn if (machine.locked) => machine
+        case Coin if (!machine.locked) => machine
+      }
+      println(s"new state: ${outputMachine}")
+      State( (s) => (outputMachine, outputMachine ) )
+    }
+
+    def applySpecificInput(input:Input) : (Machine => State[Machine, Machine]) = applyInput(input) _
+
+    @tailrec
+    def loop (inputs: List[Input], acc: State[Machine, Machine]) : State[Machine, Machine] = {
+      inputs match {
+        case Nil => acc
+        case head :: tail => {
+          val func = applySpecificInput(head)
+          val newState = acc.flatMap[Machine](func)
+          loop(tail,newState)
+        }
+      }
+    }
+
+    val initialState = State[Machine, Machine ](m => (m, m))   // identity
+    loop (inputs,initialState)
+  }
 
 
 

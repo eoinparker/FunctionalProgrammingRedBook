@@ -215,6 +215,17 @@ class Chapter6TestSuite extends JUnitSuite with GeneratorDrivenPropertyChecks {
      }
   }
 
+   @Test def exerciseTestCoinStateMonad : Unit = {
+
+     val inputGen = Gen.nonEmptyContainerOf[List, Input](Gen.oneOf(Coin,Turn))
+     forAll(inputGen, Gen.posNum[Int], Gen.posNum[Int], minSuccessful(100)) { (inputs, initialCandies, initialCoins) =>
+       val outputState = simulateMachine( inputs)
+       val initialMachine = Machine(true, initialCandies, initialCoins)
+       val (outputMachine,coinCount) = outputState.run(initialMachine)
+       println(s"outputMachine ${outputMachine} ${coinCount} ${outputState}")
+
+     }
+   }
 
 
 }
