@@ -29,6 +29,12 @@ object Chapter11 {
 
 
   trait Monad[M[_]] extends Functor[M] {
+
+    def filter[A](ma: M[A])(p: A => Boolean): M[A] = flatMap(ma)(a => (p(a)) match {
+        case true => unit(a)
+        case false => unit(a) // need an mzero which we dont' have
+      } )
+
     def unit[A](a: => A): M[A]
     def flatMap[A,B](ma: M[A])(f: A => M[B]): M[B]
     def map[A,B](ma: M[A])(f: A => B): M[B] =
@@ -159,13 +165,13 @@ object Chapter11 {
   object exercise19 {
 
     case class Id[A](value: A) {
-      def map[B] (f: A=>B) : Id[B] = new Id(f(value))
-      def flatMap[B](f: A=>Id[B]) : Id[B] = f(value)
+      //def map[B] (f: A=>B) : Id[B] = new Id(f(value))
+      //def flatMap[B](f: A=>Id[B]) : Id[B] = f(value)
     }
 
     implicit val idMonad = new Monad[Id] {
       override def unit[A](a: => A): Id[A] = Id(a)
-      override def flatMap[A, B](ma: Id[A])(f: (A) => Id[B]): Id[B] = ma.flatMap(f)
+      override def flatMap[A, B](ma: Id[A])(f: (A) => Id[B]): Id[B] = f(ma.value)
     }
 
     //implicit val

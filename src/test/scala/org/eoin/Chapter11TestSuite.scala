@@ -105,16 +105,28 @@ class Chapter11TestSuite extends JUnitSuite with GeneratorDrivenPropertyChecks {
 
     val x = "elephants!"
 
-    val mid1 = Id(3.14159)
-    val mid2 = Id("eoin")
+    val id1 = Id(3.14159)
+    val id2 = Id("eoin")
+
+    // try to pimp in the map/flatMap,  for the for-yield
+    implicit class IdAsMonad[A] (val id: Id[A]) extends Monad[Id] {
+      override def unit[A](a: => A): Id[A] = Id(a)
+      override def flatMap[A, B](ma: Id[A])(f: (A) => Id[B]): Id[B] = f(ma.value)
+    }
+
+//    def doTest(implicit mi: Monad[Id]) = {
+//      //val imp = implicitly[Monad[Id]]
+//      val mid1 = mi.unit(id1)
+//      val mid2 = mi.unit(id2)
 
     val id3 = for {
-      v1 <- mid1
-      v2 <- mid2
+      v1 <- id1
+      v2 <- id2
       v3 = s"$v2  $v1  :: $x"
     } yield v3.length
 
-    id3 map println
+    //id3 map println
+
   }
 
 }
