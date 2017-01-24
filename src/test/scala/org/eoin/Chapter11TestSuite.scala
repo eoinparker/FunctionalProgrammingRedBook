@@ -1,6 +1,6 @@
 package org.eoin
 
-import org.eoin.Chapter11.{Monad, exercise1, exercise19, exercise7}
+import org.eoin.Chapter11._
 import org.junit.Test
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.Matchers._
@@ -119,14 +119,39 @@ class Chapter11TestSuite extends JUnitSuite with GeneratorDrivenPropertyChecks {
 //      val mid1 = mi.unit(id1)
 //      val mid2 = mi.unit(id2)
 
-    val id3 = for {
-      v1 <- id1
-      v2 <- id2
-      v3 = s"$v2  $v1  :: $x"
-    } yield v3.length
+//    val id3 = for {
+//      v1 <- id1
+//      v2 <- id2
+//      v3 = s"$v2  $v1  :: $x"
+//    } yield v3.length
 
     //id3 map println
 
   }
+
+    @Test def exercise20StateMonad: Unit = {
+
+      import exercise20._
+      val sti = stateMonad[String]
+
+      val a = sti.unit(10)
+      val a1 = a.run("eoin321")
+      val b = a.get.run("eoin")
+      val c = sti.replicateM(5, a)
+      val d = c.run("eoin")
+
+      val a2 = sti.unit(1.23)
+
+      val e = sti.map2(a,a2)((i,d) => Math.pow(d,i))
+      val f = e.run("asdf")
+
+      val h = sti.sequence(List.fill(10){ sti.unit(new java.util.Random().nextDouble())  } )
+
+      val i =h.run("qwerty")
+      println("done")
+
+
+    }
+
 
 }
